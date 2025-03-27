@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:week_3_blabla_project/ui/providers/async_value.dart';
 import 'package:week_3_blabla_project/ui/providers/ride_pref_provider.dart';
+import 'package:week_3_blabla_project/ui/widgets/errors/bla_error_screen.dart';
 
 import '../../../model/ride/ride_pref.dart';
 import '../../../service/ride_prefs_service.dart';
@@ -35,49 +37,80 @@ class RidePrefScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<RidesPreferencesProvider>();
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // 1 - Background  Image
-          BlaBackground(),
+    // Handle different states of pastPreferences
+    switch (provider.pastPreferences.state) {
+      case AsyncValueState.loading:
+        return const Scaffold(
+          body: Center(
+            child: BlaError(
+              message: 'Loading preferences...',
+            ),
+          ),
+        );
 
-          // 2 - Foreground content
-          Column(
+      case AsyncValueState.error:
+        return Scaffold(
+          body: Center(
+            child: BlaError(
+              message: 'No connection. Try later',
+            ),
+          ),
+        );
+
+      case AsyncValueState.success:
+        return Scaffold(
+          body: Stack(
             children: [
-              SizedBox(height: BlaSpacings.m),
-              Text(
-                "Your pick of rides at low price",
-                style: BlaTextStyles.heading.copyWith(color: Colors.white),
-              ),
-              SizedBox(height: 100),
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: BlaSpacings.xxl),
-                decoration: BoxDecoration(
-                  color: Colors.white, // White background
-                  borderRadius: BorderRadius.circular(16), // Rounded corners
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 2.1 Display the Form to input the ride preferences
-                    RidePrefForm(
-                        initialPreference: provider.currentPreference,
-                        onSubmit: (pref) => onRidePrefSelected(context, pref)),
-                    SizedBox(height: BlaSpacings.m),
+              // 1 - Background Image
+              const BlaBackground(),
 
-                    // 2.2 Optionally display a list of past preferences
-                    SizedBox(
-                      height: 200, // Set a fixed height
-                      child: ListView.builder(
-                        shrinkWrap: true, // Fix ListView height issue
-                        physics: AlwaysScrollableScrollPhysics(),
-                        itemCount: provider.preferencesHistory.length,
-                        itemBuilder: (ctx, index) => RidePrefHistoryTile(
-                          ridePref: provider.preferencesHistory[index],
-                          onPressed: () => onRidePrefSelected(
-                              context, provider.preferencesHistory[index]),
-                        ),
+              // 2 - Foreground content
+              SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: BlaSpacings.m),
+                    Text(
+                      "Your pick of rides at low price",
+                      style:
+                          BlaTextStyles.heading.copyWith(color: Colors.white),
+                    ),
+                    const SizedBox(height: 100),
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: BlaSpacings.xxl),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 2.1 Display the Form
+                          RidePrefForm(
+                            initialPreference: provider.currentPreference,
+                            onSubmit: (pref) =>
+                                onRidePrefSelected(context, pref),
+                          ),
+                          const SizedBox(height: BlaSpacings.m),
+
+                          // 2.2 Display past preferences
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: provider.preferencesHistory.length,
+                              itemBuilder: (ctx, index) => RidePrefHistoryTile(
+                                ridePref: provider.preferencesHistory[index],
+                                onPressed: () => onRidePrefSelected(
+                                  context,
+                                  provider.preferencesHistory[index],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -85,9 +118,8 @@ class RidePrefScreen extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
-    );
+        );
+    }
   }
 }
 
